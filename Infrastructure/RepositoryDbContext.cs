@@ -13,8 +13,18 @@ public class RepositoryDbContext : Microsoft.EntityFrameworkCore.DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Review>()
+            .Property(f => f.Id)
+            .ValueGeneratedOnAdd();
+        modelBuilder.Entity<Review>()
+            .HasOne(review => review.Movie)
+            .WithMany(movie => movie.Reviews)
+            .HasForeignKey(movie => movie.MovieId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-
+        modelBuilder.Entity<Movie>()
+            .Property(f => f.Id)
+            .ValueGeneratedOnAdd();
     }
 
     public DbSet<Movie> MovieTable { get; set; }
