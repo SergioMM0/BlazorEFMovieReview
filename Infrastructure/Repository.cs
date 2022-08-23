@@ -1,6 +1,11 @@
-﻿using Entities;
+﻿using System.ComponentModel.DataAnnotations;
+using Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using FluentValidation;
+using FluentValidation.Results;
+using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
+using ValidationResult = FluentValidation.Results.ValidationResult;
 
 
 namespace Infrastructure;
@@ -11,9 +16,13 @@ public class Repository :  IRepository
     private Movie mockMovieObject;
     private Review mockReviewObject;
     private DbContextOptions<RepositoryDbContext> _opts;
+    private MovieValidator _movieValidator;
+    private ReviewValidator _reviewValidator;
 
     public Repository()
     {
+        _reviewValidator = new ReviewValidator();
+        _movieValidator = new MovieValidator();
         mockMovieObject =new Movie()
         {
             Id = 1, Summary = "Bob writes a program ...", Title = "Bob's Movie", ReleaseYear = 2022,
@@ -71,22 +80,34 @@ public class Repository :  IRepository
     {
         using (var context = new RepositoryDbContext(_opts, ServiceLifetime.Scoped))
         {
-            context.MovieTable.Add(movie);
-            context.SaveChanges();
-            return movie;
+            ValidationResult results = _movieValidator.Validate(movie);
+            List<ValidationFailure> validationFailures = results.Errors;
+            if (results.IsValid)
+            {
+                context.MovieTable.Add(movie);
+                context.SaveChanges();
+                return movie;    
+            }
         }
+        throw new ValidationException("Data not validated");
     }
 
     public Review AddReview(Review review)
     {
         using (var context = new RepositoryDbContext(_opts, ServiceLifetime.Scoped))
         {
-            var movie = new Movie();
-            movie = context.MovieTable.Find(review.MovieId);
-            review.Movie = movie;
-            context.ReviewTable.Add(review);
-            context.SaveChanges();
-            return review;
+            ValidationResult results = _reviewValidator.Validate(review);
+            List<ValidationFailure> validationFailures = results.Errors;
+            if (results.IsValid)
+            {
+                var movie = new Movie();
+                movie = context.MovieTable.Find(review.MovieId);
+                review.Movie = movie;
+                context.ReviewTable.Add(review);
+                context.SaveChanges();
+                return review;    
+            }
         }
+        throw new ValidationException("Data not validated");
     }
 }
