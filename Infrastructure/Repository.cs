@@ -19,6 +19,7 @@ public class Repository :  IRepository
     private MovieValidator _movieValidator;
     private ReviewValidator _reviewValidator;
 
+    
     public Repository()
     {
         _reviewValidator = new ReviewValidator();
@@ -75,9 +76,12 @@ public class Repository :  IRepository
             return obj;
         }
     }
+    
+    
 
     public Movie AddMovie(Movie movie)
     {
+        
         using (var context = new RepositoryDbContext(_opts, ServiceLifetime.Scoped))
         {
             ValidationResult results = _movieValidator.Validate(movie);
